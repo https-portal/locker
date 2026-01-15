@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Activity Email Sender</title>
+
+<!-- EmailJS Browser SDK -->
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+<script>
+  emailjs.init('d6lQ5F_jVen-gDhJL'); // your public key
+</script>
+
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    padding: 20px;
+  }
+  .activity {
+    border: 1px solid #ccc;
+    padding: 10px;
+    margin-bottom: 10px;
+    border-radius: 5px;
+  }
+  .activity.sent {
+    background-color: #e0ffe0;
+  }
+  .activity.failed {
+    background-color: #ffe0e0;
+  }
+  button {
+    margin-top: 5px;
+    padding: 5px 10px;
+  }
+</style>
+</head>
+
+<body>
+<h2>Activity Email Sender</h2>
+<div id="activities"></div>
+
+<script>
+const firebaseURL =
+  "https://lockersystem-5a386-default-rtdb.firebaseio.com/activity.json";
+
+// store last sent activity time
+let lastSentTime = localStorage.getItem("lastSentTime")
+  ? parseInt(localStorage.getItem("lastSentTime"))
+  : null;
+
+// ================= SEND EMAIL FUNCTION =================
+async function sendEmail(act, key, div, updateTime = false) {
+  const recipient = (act.teacher_email || "").trim();
+
+  if (!recipient) {
+    console.error("No email for", key);
+    div.classList.add("failed");
+    return;
+  }
+
+  try {
+    await emailjs.send("service_kcp7nkq", "template_ylcm01i", {
+      email: recipient,
+      to_name: act.teacher || "",
+      student_name: act.name || "",
+      student_id: act.studentID || "",
+      section: act.section || "",
+      locker: act.locker || "",
+      datetime: act.datetime || ""
+    });
+
+    console.log("Email sent:", key);
+    div.classList.add("sent");
+    div.classList.remove("failed");
+
+    // update last sent time ONLY for auto-send
+    if (updateTime) {
+      const actTime = new Date(act.datetime).getTime();
+      if (!lastSentTime || actTime > lastSentTime) {
+        lastSentTime = actTime;
+        localStorage.setItem("lastSentTime", lastSentTime);
+      }
+    }
+
+  } catch (err) {
+    console.error("Email failed:", key, err);
+    div.classList.add("failed");
+  }
+}
+
+// ================= FETCH & CHECK ACTIVITY =================
+async function checkActivity() {
+  try {
+    const res = await fetch(firebaseURL);
+    const data = await res.json();
+    if (!data) return;
+
+    const container = document.getElementById("activities");
+    container.innerHTML = "";
+
+    for (let key in data) {
+      const act = data[key];
+      const actTime = new Date(act.datetime).getTime();
+
+      const div = document.createElement("div");
+      div.className = "activity";
+      div.innerHTML = `
+        <strong>Student Name:</strong> ${act.name}<br>
+        <strong>Student ID:</strong> ${act.studentID}<br>
+        <strong>Teacher:</strong> ${act.teacher}<br>
+        <strong>Teacher Email:</strong> ${act.teacher_email}<br>
+        <strong>Section:</strong> ${act.section}<br>
+        <strong>Locker:</strong> ${act.locker}<br>
+        <strong>Datetime:</strong> ${act.datetime}<br>
+        <button>Send Email Now</button>
+      `;
+      container.appendChild(div);
+
+      // manual send button
+      div.querySelector("button").addEventListener("click", () =>
+        sendEmail(act, key, div, false)
+      );
+
+      // ===== AUTO SEND (NEW ONLY) =====
+      if (!lastSentTime) {
+        // first load → mark latest only, DO NOT SEND
+        lastSentTime = actTime;
+        localStorage.setItem("lastSentTime", lastSentTime);
+        div.classList.add("sent");
+      } else if (actTime > lastSentTime) {
+        // NEW ACTIVITY → SEND
+        sendEmail(act, key, div, true);
+      } else {
+        // OLD ACTIVITY
+        div.classList.add("sent");
+      }
+    }
+
+  } catch (err) {
+    console.error("Fetch error:", err);
+  }
+}
+
+// check every 10 seconds
+checkActivity();
+setInterval(checkActivity, 10000);
+</script>
+</body>
+</html>

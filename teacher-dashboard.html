@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Teacher Dashboard | Locker System</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+
+<style>
+* { box-sizing: border-box; font-family: 'Poppins', sans-serif; }
+body { margin: 0; background: #f5f6fa; padding: 20px; }
+.container { max-width: 1000px; margin: 0 auto; background: #fff; border-radius: 12px; padding: 30px; box-shadow: 0 15px 30px rgba(0,0,0,.1); }
+.header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }
+.header h1 { font-size: 28px; color: #2a5298; }
+#status { margin-bottom: 15px; font-size: 14px; }
+.success { color: #2ecc71; }
+.error { color: #e74c3c; }
+table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+table th, table td { text-align: left; padding: 12px 15px; border-bottom: 1px solid #ddd; }
+table th { background: #2a5298; color: white; }
+table tr:hover { background: #f1f1f1; }
+table tr:nth-child(even) { background-color: #f9f9f9; }
+.footer { margin-top: 25px; text-align: center; font-size: 12px; color: #aaa; }
+button { padding: 6px 12px; border-radius: 6px; border: none; cursor: pointer; }
+button:hover { opacity: 0.9; }
+.logoutBtn { background: #2a5298; color: #fff; }
+.changePwdBtn { background: #6c5ce7; color: #fff; margin-left: 10px; }
+
+/* ===== Modal Styles ===== */
+.modal {
+  display: none;
+  position: fixed;
+  z-index: 999;
+  left: 0; top: 0;
+  width: 100%; height: 100%;
+  overflow: auto;
+  background: rgba(0,0,0,0.5);
+}
+.modal-content {
+  background: #fff;
+  margin: 10% auto;
+  padding: 20px 30px;
+  border-radius: 12px;
+  max-width: 400px;
+  position: relative;
+  box-shadow: 0 15px 30px rgba(0,0,0,.2);
+}
+.modal h2 { margin-bottom: 20px; color: #2a5298; }
+.modal input {
+  width: 100%; padding: 10px; margin: 8px 0; border: 1px solid #dfe6e9; border-radius: 8px;
+}
+.modal input:focus { outline: none; border-color: #6c5ce7; box-shadow: 0 0 5px rgba(108,92,231,0.5);}
+.modal button { width: 100%; margin-top: 12px; background: #6c5ce7; color: #fff; }
+.modal button:hover { background: #5a4bcf; }
+.close {
+  position: absolute; top: 12px; right: 15px;
+  font-size: 20px; cursor: pointer; color: #888;
+}
+.close:hover { color: #2a5298; }
+label { margin-right: 10px; font-weight: 500; }
+input[type=date] { padding: 5px 10px; border-radius: 6px; border: 1px solid #dfe6e9; }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <div class="header">
+    <h1><i class="fa-solid fa-chalkboard-teacher"></i> Teacher Dashboard</h1>
+    <div>
+      <button id="changePwdBtn" class="changePwdBtn"><i class="fa-solid fa-key"></i> Change Password</button>
+      <button id="logoutBtn" class="logoutBtn"><i class="fa-solid fa-right-from-bracket"></i> Logout</button>
+    </div>
+  </div>
+
+  <div id="welcome"></div>
+  <div id="status"></div>
+
+  <h2>Student Activities</h2>
+
+  <!-- Date Filter & Buttons -->
+  <div style="margin: 15px 0;">
+    <label>From: <input type="date" id="fromDate"></label>
+    <label>To: <input type="date" id="toDate"></label>
+    <button id="filterDateBtn"><i class="fa-solid fa-filter"></i> Filter</button>
+    <button id="sortDateBtn"><i class="fa-solid fa-calendar"></i> Sort by Date</button>
+    <button id="exportBtn"><i class="fa-solid fa-file-export"></i> Export Excel</button>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Student Name</th>
+        <th>Locker #</th>
+        <th>Section</th>
+        <th>Student ID</th>
+        <th>Date/Time</th>
+      </tr>
+    </thead>
+    <tbody id="activityTable">
+      <tr><td colspan="5" style="text-align:center;">Loading activities...</td></tr>
+    </tbody>
+  </table>
+
+  <div class="footer">
+    © 2025 Automated Locker System
+  </div>
+</div>
+
+<!-- ===== Change Password Modal ===== -->
+<div id="pwdModal" class="modal">
+  <div class="modal-content">
+    <span class="close" id="closeModal">&times;</span>
+    <h2>Change Password</h2>
+    <input type="password" id="currentPwd" placeholder="Current Password">
+    <input type="password" id="newPwd" placeholder="New Password">
+    <input type="password" id="confirmPwd" placeholder="Confirm New Password">
+    <button id="updatePwdBtn">Update Password</button>
+    <div id="pwdStatus" style="margin-top:10px;font-size:14px;"></div>
+  </div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js"; 
+import { getDatabase, ref, get, update } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+
+// Firebase config
+const firebaseConfig = {
+  apiKey: "AIzaSyDZp8uWoeq7v4XVmfUXsIXpj7dkm3H96iY",
+  authDomain: "lockersystem-5a386.firebaseapp.com",
+  databaseURL: "https://lockersystem-5a386-default-rtdb.firebaseio.com",
+  projectId: "lockersystem-5a386",
+  storageBucket: "lockersystem-5a386.appspot.com",
+  messagingSenderId: "990542584710",
+  appId: "1:990542584710:web:2ecbedde401b70b5596a07",
+  measurementId: "G-QR99V6BQLZ"
+};
+
+const app = initializeApp(firebaseConfig);
+const database = getDatabase(app);
+
+const welcomeDiv = document.getElementById("welcome");
+const status = document.getElementById("status");
+const activityTable = document.getElementById("activityTable");
+const logoutBtn = document.getElementById("logoutBtn");
+
+const changePwdBtn = document.getElementById("changePwdBtn");
+const pwdModal = document.getElementById("pwdModal");
+const closeModal = document.getElementById("closeModal");
+const updatePwdBtn = document.getElementById("updatePwdBtn");
+const currentPwdInput = document.getElementById("currentPwd");
+const newPwdInput = document.getElementById("newPwd");
+const confirmPwdInput = document.getElementById("confirmPwd");
+const pwdStatus = document.getElementById("pwdStatus");
+
+// Teacher session info
+const teacherID = sessionStorage.getItem("teacherID");
+const teacherName = sessionStorage.getItem("teacherName");
+
+if(!teacherID) {
+  alert("Please login first");
+  window.location.href = "teacher-login.html";
+} else {
+  welcomeDiv.innerHTML = `<h3>Welcome, ${teacherName}</h3>`;
+}
+
+// ===== Store all activities =====
+let allActivities = []; 
+
+async function loadActivities() {
+  activityTable.innerHTML = '<tr><td colspan="5" style="text-align:center;">Loading activities...</td></tr>';
+  try {
+    const snapshot = await get(ref(database, "activities"));
+    if (!snapshot.exists()) {
+      activityTable.innerHTML = '<tr><td colspan="5" style="text-align:center;">No activities found</td></tr>';
+      return;
+    }
+
+    const activities = snapshot.val();
+    allActivities = Object.values(activities).filter(a => a.teacher === teacherName);
+    renderTable(allActivities);
+
+  } catch (err) {
+    activityTable.innerHTML = '<tr><td colspan="5" style="text-align:center;">Error loading activities</td></tr>';
+    status.innerText = "❌ " + err.message;
+    status.className = "error";
+  }
+}
+
+function renderTable(data) {
+  if(data.length === 0) {
+    activityTable.innerHTML = '<tr><td colspan="5" style="text-align:center;">No activities found</td></tr>';
+    return;
+  }
+  activityTable.innerHTML = "";
+  data.forEach(a => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${a.studentName}</td>
+      <td>${a.locker}</td>
+      <td>${a.section}</td>
+      <td>${a.studentID}</td>
+      <td>${a.timestamp}</td>
+    `;
+    activityTable.appendChild(tr);
+  });
+}
+
+// ===== Logout =====
+logoutBtn.addEventListener("click", () => {
+  sessionStorage.clear();
+  window.location.href = "teacher-login.html";
+});
+
+// ===== Modal functions =====
+changePwdBtn.addEventListener("click", () => { pwdModal.style.display = "block"; });
+closeModal.addEventListener("click", () => { pwdModal.style.display = "none"; pwdStatus.innerText = ""; });
+window.addEventListener("click", e => { if(e.target == pwdModal) { pwdModal.style.display = "none"; pwdStatus.innerText = ""; } });
+
+// ===== Update Password =====
+updatePwdBtn.addEventListener("click", async () => {
+  const currentPwd = currentPwdInput.value.trim();
+  const newPwd = newPwdInput.value.trim();
+  const confirmPwd = confirmPwdInput.value.trim();
+
+  if (!currentPwd || !newPwd || !confirmPwd) {
+    pwdStatus.innerText = "❌ Please fill all fields";
+    pwdStatus.className = "error";
+    return;
+  }
+
+  if (newPwd !== confirmPwd) {
+    pwdStatus.innerText = "❌ New passwords do not match";
+    pwdStatus.className = "error";
+    return;
+  }
+
+  try {
+    const snapshot = await get(ref(database, "users/" + teacherID));
+    if (!snapshot.exists()) {
+      pwdStatus.innerText = "❌ User not found";
+      pwdStatus.className = "error";
+      return;
+    }
+
+    const teacher = snapshot.val();
+
+    if (String(teacher.password) !== currentPwd) {
+      pwdStatus.innerText = "❌ Current password is incorrect";
+      pwdStatus.className = "error";
+      return;
+    }
+
+    await update(ref(database, "users/" + teacherID), { password: isNaN(currentPwd) ? newPwd : Number(newPwd) });
+
+    pwdStatus.innerText = "✅ Password updated successfully!";
+    pwdStatus.className = "success";
+
+    currentPwdInput.value = "";
+    newPwdInput.value = "";
+    confirmPwdInput.value = "";
+  } catch (err) {
+    pwdStatus.innerText = "❌ Error: " + err.message;
+    pwdStatus.className = "error";
+  }
+});
+
+// ===== Sort by Date =====
+let sortAscending = true;
+document.getElementById("sortDateBtn").addEventListener("click", () => {
+  const rows = Array.from(activityTable.querySelectorAll("tr"));
+  rows.sort((a, b) => {
+    const dateA = new Date(a.cells[4].innerText);
+    const dateB = new Date(b.cells[4].innerText);
+    return sortAscending ? dateA - dateB : dateB - dateA;
+  });
+  sortAscending = !sortAscending;
+  activityTable.innerHTML = "";
+  rows.forEach(r => activityTable.appendChild(r));
+});
+
+// ===== Filter by Date =====
+document.getElementById("filterDateBtn").addEventListener("click", () => {
+  const from = document.getElementById("fromDate").value;
+  const to = document.getElementById("toDate").value;
+
+  if(!from || !to) { alert("Select both from and to dates"); return; }
+
+  const filtered = allActivities.filter(a => {
+    const t = new Date(a.timestamp).setHours(0,0,0,0);
+    const fromDate = new Date(from).setHours(0,0,0,0);
+    const toDate = new Date(to).setHours(0,0,0,0);
+    return t >= fromDate && t <= toDate;
+  });
+
+  renderTable(filtered);
+});
+
+// ===== Export to Excel (CSV) =====
+document.getElementById("exportBtn").addEventListener("click", () => {
+  const rows = activityTable.querySelectorAll("tr");
+  if(rows.length === 0) { alert("No data to export"); return; }
+
+  let csvContent = "data:text/csv;charset=utf-8,";
+  csvContent += "Student Name,Locker #,Section,Student ID,Date/Time\n";
+
+  rows.forEach(row => {
+    const cols = row.querySelectorAll("td");
+    if(cols.length === 0) return;
+    const rowData = Array.from(cols).map(td => `"${td.innerText}"`).join(",");
+    csvContent += rowData + "\n";
+  });
+
+  const encodedUri = encodeURI(csvContent);
+  const link = document.createElement("a");
+  link.setAttribute("href", encodedUri);
+  link.setAttribute("download", `student_activities_${new Date().toISOString().slice(0,10)}.csv`);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+});
+
+// ===== Load activities initially =====
+loadActivities();
+</script>
+
+</body>
+</html>

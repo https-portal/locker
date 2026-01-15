@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Teacher Login | Locker System</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+<style>
+  /* ===== Reset ===== */
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Poppins', sans-serif;
+    background: linear-gradient(135deg, #74b9ff, #a29bfe);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+  }
+
+  .login-container {
+    background: #fff;
+    padding: 40px 30px;
+    border-radius: 16px;
+    box-shadow: 0 15px 35px rgba(0,0,0,0.15);
+    width: 360px;
+    text-align: center;
+    transition: transform 0.3s ease;
+  }
+
+  .login-container:hover {
+    transform: translateY(-5px);
+  }
+
+  h2 {
+    margin-bottom: 25px;
+    color: #2d3436;
+    font-weight: 600;
+  }
+
+  input {
+    width: 100%;
+    padding: 12px 15px;
+    margin: 10px 0;
+    border: 1px solid #dfe6e9;
+    border-radius: 10px;
+    font-size: 15px;
+    transition: 0.3s;
+  }
+
+  input:focus {
+    outline: none;
+    border-color: #6c5ce7;
+    box-shadow: 0 0 5px rgba(108, 92, 231, 0.5);
+  }
+
+  button {
+    width: 100%;
+    padding: 12px;
+    font-size: 16px;
+    border: none;
+    border-radius: 10px;
+    background: #6c5ce7;
+    color: #fff;
+    cursor: pointer;
+    margin-top: 15px;
+    transition: 0.3s;
+  }
+
+  button:hover {
+    background: #5a4bcf;
+  }
+
+  #error {
+    color: #e74c3c;
+    margin-top: 12px;
+    font-size: 14px;
+    min-height: 18px;
+  }
+
+  @media (max-width: 400px) {
+    .login-container {
+      width: 90%;
+      padding: 30px 20px;
+    }
+  }
+</style>
+</head>
+<body>
+
+<div class="login-container">
+  <h2>Teacher Login</h2>
+  <input type="text" id="teacherID" placeholder="Enter your Teacher ID">
+  <input type="password" id="teacherPassword" placeholder="Enter your Password">
+  <button id="loginBtn">Login</button>
+  <div id="error"></div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js"; 
+import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDZp8uWoeq7v4XVmfUXsIXpj7dkm3H96iY",
+  authDomain: "lockersystem-5a386.firebaseapp.com",
+  databaseURL: "https://lockersystem-5a386-default-rtdb.firebaseio.com",
+  projectId: "lockersystem-5a386",
+  storageBucket: "lockersystem-5a386.appspot.com",
+  messagingSenderId: "990542584710",
+  appId: "1:990542584710:web:2ecbedde401b70b5596a07",
+  measurementId: "G-QR99V6BQLZ"
+};
+
+const app = initializeApp(firebaseConfig);
+const database = getDatabase(app);
+
+const loginBtn = document.getElementById("loginBtn");
+const teacherIDInput = document.getElementById("teacherID");
+const teacherPasswordInput = document.getElementById("teacherPassword");
+const errorDiv = document.getElementById("error");
+
+loginBtn.addEventListener("click", async () => {
+  const teacherID = teacherIDInput.value.trim();
+  const password = teacherPasswordInput.value.trim();
+  if (!teacherID || !password) {
+    errorDiv.innerText = "❌ Please enter ID and password";
+    return;
+  }
+
+  errorDiv.innerText = "Checking...";
+
+  try {
+    const snapshot = await get(ref(database, "users"));
+    if (!snapshot.exists()) {
+      errorDiv.innerText = "❌ No users found";
+      return;
+    }
+
+    const users = snapshot.val();
+    const teacher = users[teacherID];
+
+    if (!teacher || teacher.usertype !== "teacher") {
+      errorDiv.innerText = "❌ Teacher not found";
+      return;
+    }
+
+    if (teacher.password != password) {
+      errorDiv.innerText = "❌ Incorrect password";
+      return;
+    }
+
+    // Save teacher info and redirect
+    sessionStorage.setItem("teacherID", teacherID);
+    sessionStorage.setItem("teacherName", teacher.name);
+    window.location.href = "teacher-dashboard.html";
+
+  } catch (err) {
+    errorDiv.innerText = "❌ Error: " + err.message;
+  }
+});
+</script>
+
+</body>
+</html>

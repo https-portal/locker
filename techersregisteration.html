@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Teacher Registration | Locker System</title>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+import { getDatabase, ref, set, get } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+import { getAuth, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+
+// ===== Firebase config =====
+const firebaseConfig = {
+  apiKey: "AIzaSyDZp8uWoeq7v4XVmfUXsIXpj7dkm3H96iY",
+  authDomain: "lockersystem-5a386.firebaseapp.com",
+  databaseURL: "https://lockersystem-5a386-default-rtdb.firebaseio.com",
+  projectId: "lockersystem-5a386",
+  storageBucket: "lockersystem-5a386.appspot.com",
+  messagingSenderId: "990542584710",
+  appId: "1:990542584710:web:2ecbedde401b70b5596a07",
+  measurementId: "G-QR99V6BQLZ"
+};
+
+// ===== Initialize Firebase =====
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+const auth = getAuth(app);
+
+// ===== HTML Elements =====
+const statusDiv = document.createElement("div");
+statusDiv.id = "status";
+document.body.appendChild(statusDiv);
+
+const registerBtn = document.createElement("button");
+registerBtn.innerText = "Sign in with Google";
+document.body.appendChild(registerBtn);
+
+// ===== Register / Sign-in Function =====
+registerBtn.onclick = async () => {
+  const provider = new GoogleAuthProvider();
+  try {
+    const result = await signInWithPopup(auth, provider);
+    const user = result.user;
+
+    // Check if user already exists
+    const usersSnap = await get(ref(db, `users`));
+    let users = usersSnap.exists() ? usersSnap.val() : {};
+    let existingUser = Object.values(users).find(u => u.email === user.email);
+
+    if (existingUser) {
+      statusDiv.innerText = `✅ Welcome back, ${existingUser.name}!`;
+      return;
+    }
+
+    // New teacher registration
+    const uid = user.uid;
+    const newTeacher = {
+      id: uid,
+      name: user.displayName,
+      email: user.email,
+      createdAt: Date.now(),
+      usertype: "teacher",
+      locker: null // optional, can assign later
+    };
+
+    await set(ref(db, `users/${uid}`), newTeacher);
+    statusDiv.innerText = `✅ Teacher ${user.displayName} registered successfully!`;
+
+  } catch (err) {
+    console.error(err);
+    statusDiv.innerText = "❌ Error: " + err.message;
+  }
+};
+</script>
+</head>
+<body>
+<h1>Teacher Registration | Locker System</h1>
+<p>Click the button to register/login using your Google account.</p>
+</body>
+</html>

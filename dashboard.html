@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Locker System | Dashboard</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+
+<style>
+* { box-sizing: border-box; font-family: 'Poppins', sans-serif; }
+body { margin: 0; background: #f5f6fa; padding: 20px; }
+.container { max-width: 1000px; margin: 0 auto; background: #fff; border-radius: 12px; padding: 30px; box-shadow: 0 15px 30px rgba(0,0,0,.1); }
+.header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }
+.header h1 { font-size: 28px; color: #2a5298; }
+.header button { margin-left: 10px; padding: 6px 12px; font-size: 14px; border-radius: 6px; border: none; cursor: pointer; background: #3498db; color: #fff; }
+.header button:hover { background: #2980b9; }
+
+#status { margin-bottom: 15px; font-size: 14px; }
+.success { color: #2ecc71; }
+.error { color: #e74c3c; }
+
+table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+table th, table td { text-align: left; padding: 12px 15px; border-bottom: 1px solid #ddd; }
+table th { background: #2a5298; color: white; }
+table tr:hover { background: #f1f1f1; }
+table tr:nth-child(even) { background-color: #f9f9f9; }
+
+.footer { margin-top: 25px; text-align: center; font-size: 12px; color: #aaa; }
+
+.select-teacher { margin-top: 20px; display: flex; gap: 10px; align-items: center; }
+.select-teacher select, .select-teacher button { padding: 10px; font-size: 14px; border-radius: 8px; border: 1px solid #ccc; }
+
+h2 { margin-top: 40px; color: #2a5298; }
+
+/* Modal styles */
+.modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.5); }
+.modal-content { background-color: #fff; margin: 10% auto; padding: 20px; border-radius: 12px; width: 400px; max-width: 90%; }
+.close { float: right; font-size: 24px; font-weight: bold; cursor: pointer; }
+.close:hover { color: #e74c3c; }
+
+#studentList { max-height: 300px; overflow-y: auto; padding-left: 20px; }
+#studentList li { margin-bottom: 8px; }
+#studentList button { background: none; border: none; color: #e74c3c; cursor: pointer; font-size: 14px; margin-left: 10px; }
+
+.editUserBtn { padding: 5px 10px; font-size: 13px; cursor: pointer; border-radius: 6px; border: 1px solid #ccc; background-color: #f0f0f0; }
+.editUserBtn:hover { background-color: #ddd; }
+
+#removeAllBtn { background-color: #e74c3c; color: #fff; border: none; padding: 6px 12px; border-radius: 8px; cursor: pointer; }
+#removeAllBtn:disabled { background-color: #ccc; cursor: not-allowed; }
+#removeAllBtn:hover:enabled { background-color: #c0392b; }
+
+.saveLockerBtn { margin-left: 5px; padding: 5px 10px; cursor: pointer; border-radius: 6px; border: 1px solid #ccc; background-color: #3498db; color:#fff; font-size: 12px; }
+.saveLockerBtn:hover { background-color: #2980b9; }
+
+input[type="number"] { width:60px; padding:4px; border-radius:6px; border:1px solid #ccc; }
+
+/* Server modal input */
+#serverInput { width:100%; padding:8px; margin:10px 0; border-radius:6px; border:1px solid #ccc; }
+#saveServerBtn { padding:8px 12px; border:none; border-radius:6px; background:#3498db; color:#fff; cursor:pointer; }
+#saveServerBtn:hover { background:#2980b9; }
+
+</style>
+</head>
+<body>
+
+<div class="container">
+  <div class="header">
+    <h1><i class="fa-solid fa-users"></i> Users Dashboard</h1>
+    <div>
+      <button id="serverBtn"><i class="fa-solid fa-server"></i> Server IP</button>
+      <button id="refreshBtn"><i class="fa-solid fa-arrows-rotate"></i> Refresh</button>
+    </div>
+  </div>
+
+  <div id="status"></div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Select</th>
+        <th>Full Name</th>
+        <th>Section</th>
+        <th>User Type</th>
+        <th>Locker #</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+    <tbody id="usersTable">
+      <tr><td colspan="6" style="text-align:center;">Loading users...</td></tr>
+    </tbody>
+  </table>
+
+  <div class="select-teacher">
+    <label for="teacherSelect">Assign to Teacher:</label>
+    <select id="teacherSelect">
+      <option value="">-- Select Teacher --</option>
+    </select>
+    <button id="assignBtn">Assign Selected Students</button>
+  </div>
+
+  <h2>Teachers</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Teacher Name</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+    <tbody id="teacherTable">
+      <tr><td colspan="2" style="text-align:center;">Loading teachers...</td></tr>
+    </tbody>
+  </table>
+
+  <div class="footer">
+    © 2025 Automated Locker System
+  </div>
+</div>
+
+<!-- Student modal -->
+<div id="studentModal" class="modal">
+  <div class="modal-content">
+    <span class="close">&times;</span>
+    <h3>Assigned Students</h3>
+    <button id="removeAllBtn">Remove All Students</button>
+    <ul id="studentList"></ul>
+  </div>
+</div>
+
+<!-- Server IP modal -->
+<div id="serverModal" class="modal">
+  <div class="modal-content">
+    <span class="close" id="serverClose">&times;</span>
+    <h3>Server IP Settings</h3>
+    <label for="serverInput">Server IP:</label>
+    <input type="text" id="serverInput" placeholder="Enter server IP">
+    <button id="saveServerBtn">Save</button>
+  </div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+import { getDatabase, ref, get, set } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+import { getAnalytics } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-analytics.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDZp8uWoeq7v4XVmfUXsIXpj7dkm3H96iY",
+  authDomain: "lockersystem-5a386.firebaseapp.com",
+  databaseURL: "https://lockersystem-5a386-default-rtdb.firebaseio.com",
+  projectId: "lockersystem-5a386",
+  storageBucket: "lockersystem-5a386.appspot.com",
+  messagingSenderId: "990542584710",
+  appId: "1:990542584710:web:2ecbedde401b70b5596a07",
+  measurementId: "G-QR99V6BQLZ"
+};
+
+const app = initializeApp(firebaseConfig);
+getAnalytics(app);
+const db = getDatabase(app);
+
+const status = document.getElementById("status");
+const usersTable = document.getElementById("usersTable");
+const refreshBtn = document.getElementById("refreshBtn");
+const teacherSelect = document.getElementById("teacherSelect");
+const assignBtn = document.getElementById("assignBtn");
+const teacherTable = document.getElementById("teacherTable");
+const studentModal = document.getElementById("studentModal");
+const studentList = document.getElementById("studentList");
+const modalClose = document.querySelector(".close");
+const removeAllBtn = document.getElementById("removeAllBtn");
+
+// Sections
+const grade11Sections = ["11 STEM 6A","11 STEM 7A","11 HUMSS 2A","11 ABM 3A","11 ABM 1P"];
+const grade12Sections = ["12 STEM 7A","12 STEM 9A","12 STEM 4P","12 STEM 6P","12 STEM 5A"];
+
+// AUTO-ASSIGN function
+async function autoAssignStudents(users) {
+  const snap = await get(ref(db, "users"));
+  const allUsers = snap.exists() ? snap.val() : {};
+  let teacherLocker1 = null;
+  let teacherLocker2 = null;
+
+  // Find teachers by locker
+  for (let id in allUsers) {
+    const u = allUsers[id];
+    if (u.usertype === "teacher" && u.locker) {
+      if (u.locker == 1) teacherLocker1 = u.name;
+      if (u.locker == 2) teacherLocker2 = u.name;
+    }
+  }
+
+  for (let id in users) {
+    const user = users[id];
+    if (user.usertype === "student" && user.section) {
+      if (grade11Sections.includes(user.section) && teacherLocker2) {
+        await set(ref(db, `teachers/${teacherLocker2}/${id}`), { name: user.name });
+      }
+      if (grade12Sections.includes(user.section) && teacherLocker1) {
+        await set(ref(db, `teachers/${teacherLocker1}/${id}`), { name: user.name });
+      }
+    }
+  }
+}
+
+async function loadUsers() {
+  status.innerText = "";
+  usersTable.innerHTML = '<tr><td colspan="6" style="text-align:center;">Loading users...</td></tr>';
+  try {
+    const snap = await get(ref(db, "users"));
+    if (!snap.exists()) {
+      usersTable.innerHTML = '<tr><td colspan="6" style="text-align:center;">No users found</td></tr>';
+      return;
+    }
+    const users = snap.val();
+
+    await autoAssignStudents(users);
+
+    usersTable.innerHTML = "";
+    const teachers = [];
+
+    for (const id in users) {
+      const user = users[id];
+      if(user.usertype==="teacher") teachers.push(user.name);
+
+      const lockerCell = user.usertype==="teacher" ? 
+        `<input type="number" min="1" value="${user.locker || ''}" style="width:60px;" id="lockerInput-${user.id}">
+        <button class="saveLockerBtn" data-id="${user.id}">Save</button>` : 
+        (user.locker || "-");
+
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${user.usertype==="student"? `<input type="checkbox" class="studentCheckbox" data-id="${id}" data-name="${user.name}">` : ""}</td>
+        <td>${user.name}</td>
+        <td>${user.section || "-"}</td>
+        <td>${user.usertype || "student"}</td>
+        <td>${lockerCell}</td>
+        <td><button class="editUserBtn" data-id="${id}" data-name="${user.name}" data-type="${user.usertype}">Edit Type</button></td>
+      `;
+      usersTable.appendChild(tr);
+    }
+
+    // Populate teacher select
+    teacherSelect.innerHTML = '<option value="">-- Select Teacher --</option>';
+    teachers.forEach(t=>{
+      const opt=document.createElement("option");
+      opt.value=t;
+      opt.innerText=t;
+      teacherSelect.appendChild(opt);
+    });
+
+    setupButtons(users);
+    loadTeacherAssignments();
+
+  } catch(err){ status.innerText="❌ Error loading users: "+err.message; status.className="error"; }
+}
+
+// Buttons
+function setupButtons(users){
+  document.querySelectorAll(".editUserBtn").forEach(btn=>{
+    btn.onclick=async()=>{
+      const id=btn.dataset.id, name=btn.dataset.name, type=btn.dataset.type;
+      const newType=prompt(`Change user type for ${name} (current: ${type})`, type);
+      if(!newType || !["student","teacher","admin"].includes(newType)) return;
+      try{ await set(ref(db,`users/${id}/usertype`), newType); status.innerText=`✅ ${name} is now ${newType}`; status.className="success"; loadUsers();}
+      catch(err){ status.innerText="❌ "+err.message; status.className="error"; }
+    };
+  });
+
+  document.querySelectorAll(".saveLockerBtn").forEach(btn=>{
+    btn.onclick=async()=>{
+      const id=btn.dataset.id;
+      const val=parseInt(document.getElementById(`lockerInput-${id}`).value);
+      if(isNaN(val) || val<=0){ status.innerText="❌ Enter valid locker #"; status.className="error"; return;}
+      try{ await set(ref(db,`users/${id}/locker`), val); status.innerText=`✅ Locker ${val} saved`; status.className="success"; loadUsers(); }
+      catch(err){ status.innerText="❌ "+err.message; status.className="error"; }
+    };
+  });
+}
+
+// Assign students manually
+assignBtn.onclick=async()=>{
+  const teacher=teacherSelect.value;
+  if(!teacher){ status.innerText="❌ Select teacher"; status.className="error"; return; }
+  const checkboxes=document.querySelectorAll(".studentCheckbox:checked");
+  if(checkboxes.length===0){ status.innerText="❌ Select students"; status.className="error"; return; }
+  try{
+    for(let cb of checkboxes){
+      await set(ref(db,`teachers/${teacher}/${cb.dataset.id}`), {name: cb.dataset.name});
+    }
+    status.innerText=`✅ ${checkboxes.length} students assigned to ${teacher}`; status.className="success";
+    checkboxes.forEach(cb=>cb.checked=false);
+    loadTeacherAssignments();
+  }catch(err){ status.innerText="❌ "+err.message; status.className="error"; }
+};
+
+// Teacher assignments modal
+async function loadTeacherAssignments() {
+  teacherTable.innerHTML='<tr><td colspan="2" style="text-align:center;">Loading teacher assignments...</td></tr>';
+  try{
+    const snap=await get(ref(db,"teachers"));
+    if(!snap.exists()){ teacherTable.innerHTML='<tr><td colspan="2" style="text-align:center;">No assignments</td></tr>'; return;}
+    teacherTable.innerHTML="";
+    const teachers = snap.val();
+    for(let t in teachers){
+      const tr=document.createElement("tr");
+      tr.innerHTML=`<td>${t}</td><td><button class="viewStudentsBtn" data-teacher="${t}"><i class="fa-solid fa-eye"></i> View Students</button></td>`;
+      teacherTable.appendChild(tr);
+    }
+    document.querySelectorAll(".viewStudentsBtn").forEach(btn=>{
+      btn.onclick=async()=>{
+        const teacher=btn.dataset.teacher;
+        const snap=await get(ref(db,`teachers/${teacher}`));
+        studentList.innerHTML="";
+        removeAllBtn.onclick=async()=>{
+          if(!snap.exists()) return;
+          if(confirm(`Unassign all students from ${teacher}?`)){
+            try{ await set(ref(db,`teachers/${teacher}`), null); studentList.innerHTML=""; status.innerText=`✅ All removed`; status.className="success"; }
+            catch(err){ status.innerText="❌ "+err.message; status.className="error"; }
+          }
+        };
+        if(!snap.exists()){ studentList.innerHTML="<li>No students assigned</li>"; removeAllBtn.disabled=true; }
+        else{
+          removeAllBtn.disabled=false;
+          Object.entries(snap.val()).forEach(([id,s])=>{
+            const li=document.createElement("li");
+            li.textContent=s.name;
+            const btnDel=document.createElement("button");
+            btnDel.textContent="❌";
+            btnDel.onclick=async()=>{
+              if(confirm(`Unassign ${s.name}?`)){
+                try{ await set(ref(db,`teachers/${teacher}/${id}`), null); li.remove(); status.innerText=`✅ ${s.name} removed`; status.className="success"; }
+                catch(err){ status.innerText="❌ "+err.message; status.className="error"; }
+              }
+            };
+            li.appendChild(btnDel); studentList.appendChild(li);
+          });
+        }
+        studentModal.style.display="block";
+      };
+    });
+  }catch(err){ teacherTable.innerHTML='<tr><td colspan="2" style="text-align:center;">Error loading</td></tr>'; status.innerText="❌ "+err.message; status.className="error"; }
+}
+
+modalClose.onclick=()=>studentModal.style.display="none";
+window.onclick=(e)=>{ if(e.target===studentModal) studentModal.style.display="none"; }
+
+refreshBtn.onclick=loadUsers;
+loadUsers();
+
+// Server IP Modal
+const serverBtn = document.getElementById("serverBtn");
+const serverModal = document.getElementById("serverModal");
+const serverClose = document.getElementById("serverClose");
+const serverInput = document.getElementById("serverInput");
+const saveServerBtn = document.getElementById("saveServerBtn");
+
+// Open server modal
+serverBtn.onclick = async () => {
+  try {
+    const snap = await get(ref(db, "server/serverip"));
+    serverInput.value = snap.exists() ? snap.val() : "";
+  } catch(err) {
+    status.innerText = "❌ " + err.message;
+    status.className = "error";
+  }
+  serverModal.style.display = "block";
+};
+
+// Close server modal
+serverClose.onclick = () => serverModal.style.display = "none";
+window.onclick = (e) => { if(e.target === serverModal) serverModal.style.display = "none"; }
+
+// Save server IP
+saveServerBtn.onclick = async () => {
+  const ip = serverInput.value.trim();
+  if(!ip) { 
+    status.innerText = "❌ Enter a valid IP"; 
+    status.className = "error"; 
+    return; 
+  }
+  try {
+    await set(ref(db, "server/serverip"), ip);
+    status.innerText = `✅ Server IP updated to ${ip}`;
+    status.className = "success";
+    serverModal.style.display = "none";
+  } catch(err) {
+    status.innerText = "❌ " + err.message;
+    status.className = "error";
+  }
+};
+</script>
+
+</body>
+</html>
