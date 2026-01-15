@@ -205,7 +205,13 @@ button:disabled {
     <i class="fa-solid fa-user-plus"></i> Register
   </button>
 
+  <!-- Teachers Dashboard Button -->
+  <button id="teacherDashboardBtn" style="margin-top: 10px; background: #2a5298;">
+    <i class="fa-solid fa-chalkboard-teacher"></i> Teachers Dashboard
+  </button>
+
   <div id="status"></div>
+
 
   <div class="footer">
     © 2025 Automated Locker System
@@ -320,10 +326,20 @@ await set(ref(database, "users/" + id), {
   btnReset();
 });
 
+
+
+
 function btnReset() {
   btn.disabled = !(nameInput.value.trim() && idInput.value.trim() && emailInput.value.trim() && sectionInput.value);
   btn.innerHTML = '<i class="fa-solid fa-user-plus"></i> Register';
 }
+
+// Open teacher dashboard on click
+document.getElementById("teacherDashboardBtn").addEventListener("click", () => {
+  window.location.href = "teacher-dashboard.html";
+});
+
+
 </script>
 
 </body>

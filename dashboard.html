@@ -155,6 +155,16 @@ const firebaseConfig = {
   measurementId: "G-QR99V6BQLZ"
 };
 
+// ===== SESSION GUARD =====
+const teacherID = sessionStorage.getItem("teacherID");
+const teacherName = sessionStorage.getItem("teacherName");
+
+if (!teacherID || !teacherName) {
+  alert("Access denied. Please login first.");
+  window.location.href = "teacher-login.html";
+}
+
+
 const app = initializeApp(firebaseConfig);
 getAnalytics(app);
 const db = getDatabase(app);
@@ -388,7 +398,164 @@ saveServerBtn.onclick = async () => {
     status.innerText = "❌ " + err.message;
     status.className = "error";
   }
+};<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Locker System | Dashboard</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+
+<style>
+* { box-sizing: border-box; font-family: 'Poppins', sans-serif; }
+body { margin: 0; background: #f5f6fa; padding: 20px; }
+.container { max-width: 1000px; margin: 0 auto; background: #fff; border-radius: 12px; padding: 30px; box-shadow: 0 15px 30px rgba(0,0,0,.1); }
+.header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }
+.header h1 { font-size: 28px; color: #2a5298; }
+.header button { margin-left: 10px; padding: 6px 12px; font-size: 14px; border-radius: 6px; border: none; cursor: pointer; background: #3498db; color: #fff; }
+.header button:hover { background: #2980b9; }
+
+#status { margin-bottom: 15px; font-size: 14px; }
+.success { color: #2ecc71; }
+.error { color: #e74c3c; }
+
+table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+table th, table td { text-align: left; padding: 12px 15px; border-bottom: 1px solid #ddd; }
+table th { background: #2a5298; color: white; }
+table tr:hover { background: #f1f1f1; }
+table tr:nth-child(even) { background-color: #f9f9f9; }
+
+.footer { margin-top: 25px; text-align: center; font-size: 12px; color: #aaa; }
+
+.select-teacher { margin-top: 20px; display: flex; gap: 10px; align-items: center; }
+.select-teacher select, .select-teacher button { padding: 10px; font-size: 14px; border-radius: 8px; border: 1px solid #ccc; }
+
+h2 { margin-top: 40px; color: #2a5298; }
+
+/* Modal styles */
+.modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); }
+.modal-content { background-color: #fff; margin: 10% auto; padding: 20px; border-radius: 12px; width: 400px; }
+.close { float: right; font-size: 24px; cursor: pointer; }
+</style>
+</head>
+
+<body>
+
+<div class="container">
+  <div class="header">
+    <h1><i class="fa-solid fa-users"></i> Users Dashboard</h1>
+    <div>
+      <button id="serverBtn"><i class="fa-solid fa-server"></i> Server IP</button>
+      <button id="refreshBtn"><i class="fa-solid fa-arrows-rotate"></i> Refresh</button>
+    </div>
+  </div>
+
+  <div id="status"></div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Select</th>
+        <th>Full Name</th>
+        <th>Section</th>
+        <th>User Type</th>
+        <th>Locker #</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+    <tbody id="usersTable">
+      <tr><td colspan="6" style="text-align:center;">Loading users...</td></tr>
+    </tbody>
+  </table>
+
+  <div class="footer">
+    © 2025 Automated Locker System
+  </div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+import { getDatabase, ref, get, set } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+
+/* =======================
+   🔐 SESSION GUARD (FINAL)
+   ======================= */
+   🔐 SESSION GUARD (FINAL)
+   ======================= */
+const teacherID   = sessionStorage.getItem("teacherID");
+const teacherName = sessionStorage.getItem("teacherName");
+const usertype    = sessionStorage.getItem("usertype");
+
+if (!teacherID || usertype !== "teacher") {
+  alert("Access denied. Teachers only.");
+  sessionStorage.clear();
+  window.location.href = "teacher-login.html";
+}
+
+/* =======================
+   FIREBASE INIT
+   ======================= */
+const firebaseConfig = {
+  apiKey: "AIzaSyDZp8uWoeq7v4XVmfUXsIXpj7dkm3H96iY",
+  authDomain: "lockersystem-5a386.firebaseapp.com",
+  databaseURL: "https://lockersystem-5a386-default-rtdb.firebaseio.com",
+  projectId: "lockersystem-5a386",
+  storageBucket: "lockersystem-5a386.appspot.com",
+  messagingSenderId: "990542584710",
+  appId: "1:990542584710:web:2ecbedde401b70b5596a07"
 };
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+
+const status = document.getElementById("status");
+const usersTable = document.getElementById("usersTable");
+const refreshBtn = document.getElementById("refreshBtn");
+
+/* =======================
+   LOAD USERS
+   ======================= */
+async function loadUsers() {
+  usersTable.innerHTML = '<tr><td colspan="6" style="text-align:center;">Loading users...</td></tr>';
+  try {
+    const snap = await get(ref(db, "users"));
+    if (!snap.exists()) {
+      usersTable.innerHTML = '<tr><td colspan="6">No users found</td></tr>';
+      return;
+    }
+
+    usersTable.innerHTML = "";
+    const users = snap.val();
+
+    for (const id in users) {
+      const u = users[id];
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${u.usertype === "student" ? `<input type="checkbox">` : ""}</td>
+        <td>${u.name}</td>
+        <td>${u.section || "-"}</td>
+        <td>${u.usertype}</td>
+        <td>${u.locker || "-"}</td>
+        <td>-</td>
+      `;
+      usersTable.appendChild(tr);
+    }
+
+  } catch (err) {
+    status.innerText = "❌ " + err.message;
+    status.className = "error";
+  }
+}
+
+refreshBtn.onclick = loadUsers;
+loadUsers();
+</script>
+
+</body>
+</html>
+
 </script>
 
 </body>
