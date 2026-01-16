@@ -14,24 +14,17 @@ body { margin: 0; background: #f5f6fa; padding: 20px; }
 .container { max-width: 1000px; margin: 0 auto; background: #fff; border-radius: 12px; padding: 30px; box-shadow: 0 15px 30px rgba(0,0,0,.1); }
 .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }
 .header h1 { font-size: 28px; color: #2a5298; }
-.header button { margin-left: 10px; padding: 6px 12px; font-size: 14px; border-radius: 6px; border: none; cursor: pointer; background: #3498db; color: #fff; }
-.header button:hover { background: #2980b9; }
-
 #status { margin-bottom: 15px; font-size: 14px; }
 .success { color: #2ecc71; }
 .error { color: #e74c3c; }
-
 table { width: 100%; border-collapse: collapse; margin-top: 10px; }
 table th, table td { text-align: left; padding: 12px 15px; border-bottom: 1px solid #ddd; }
 table th { background: #2a5298; color: white; }
 table tr:hover { background: #f1f1f1; }
 table tr:nth-child(even) { background-color: #f9f9f9; }
-
 .footer { margin-top: 25px; text-align: center; font-size: 12px; color: #aaa; }
-
 .select-teacher { margin-top: 20px; display: flex; gap: 10px; align-items: center; }
 .select-teacher select, .select-teacher button { padding: 10px; font-size: 14px; border-radius: 8px; border: 1px solid #ccc; }
-
 h2 { margin-top: 40px; color: #2a5298; }
 
 /* Modal styles */
@@ -39,40 +32,35 @@ h2 { margin-top: 40px; color: #2a5298; }
 .modal-content { background-color: #fff; margin: 10% auto; padding: 20px; border-radius: 12px; width: 400px; max-width: 90%; }
 .close { float: right; font-size: 24px; font-weight: bold; cursor: pointer; }
 .close:hover { color: #e74c3c; }
-
 #studentList { max-height: 300px; overflow-y: auto; padding-left: 20px; }
 #studentList li { margin-bottom: 8px; }
 #studentList button { background: none; border: none; color: #e74c3c; cursor: pointer; font-size: 14px; margin-left: 10px; }
-
 .editUserBtn { padding: 5px 10px; font-size: 13px; cursor: pointer; border-radius: 6px; border: 1px solid #ccc; background-color: #f0f0f0; }
 .editUserBtn:hover { background-color: #ddd; }
-
 #removeAllBtn { background-color: #e74c3c; color: #fff; border: none; padding: 6px 12px; border-radius: 8px; cursor: pointer; }
 #removeAllBtn:disabled { background-color: #ccc; cursor: not-allowed; }
 #removeAllBtn:hover:enabled { background-color: #c0392b; }
-
 .saveLockerBtn { margin-left: 5px; padding: 5px 10px; cursor: pointer; border-radius: 6px; border: 1px solid #ccc; background-color: #3498db; color:#fff; font-size: 12px; }
 .saveLockerBtn:hover { background-color: #2980b9; }
-
 input[type="number"] { width:60px; padding:4px; border-radius:6px; border:1px solid #ccc; }
-
-/* Server modal input */
-#serverInput { width:100%; padding:8px; margin:10px 0; border-radius:6px; border:1px solid #ccc; }
-#saveServerBtn { padding:8px 12px; border:none; border-radius:6px; background:#3498db; color:#fff; cursor:pointer; }
-#saveServerBtn:hover { background:#2980b9; }
-
 </style>
 </head>
 <body>
 
 <div class="container">
-  <div class="header">
-    <h1><i class="fa-solid fa-users"></i> Users Dashboard</h1>
-    <div>
-      <button id="serverBtn"><i class="fa-solid fa-server"></i> Server IP</button>
-      <button id="refreshBtn"><i class="fa-solid fa-arrows-rotate"></i> Refresh</button>
-    </div>
+<div class="header">
+  <h1><i class="fa-solid fa-users"></i> Users Dashboard</h1>
+
+  <div class="header-actions">
+    <button id="serverBtn">
+      <i class="fa-solid fa-server"></i> Server IP
+    </button>
+    <button id="refreshBtn">
+      <i class="fa-solid fa-arrows-rotate"></i> Refresh
+    </button>
   </div>
+</div>
+
 
   <div id="status"></div>
 
@@ -118,7 +106,6 @@ input[type="number"] { width:60px; padding:4px; border-radius:6px; border:1px so
   </div>
 </div>
 
-<!-- Student modal -->
 <div id="studentModal" class="modal">
   <div class="modal-content">
     <span class="close">&times;</span>
@@ -128,16 +115,18 @@ input[type="number"] { width:60px; padding:4px; border-radius:6px; border:1px so
   </div>
 </div>
 
-<!-- Server IP modal -->
+
 <div id="serverModal" class="modal">
   <div class="modal-content">
     <span class="close" id="serverClose">&times;</span>
     <h3>Server IP Settings</h3>
     <label for="serverInput">Server IP:</label>
-    <input type="text" id="serverInput" placeholder="Enter server IP">
-    <button id="saveServerBtn">Save</button>
+    <input type="text" id="serverInput" placeholder="Enter server IP" style="width:100%; padding:8px; margin:10px 0; border-radius:6px; border:1px solid #ccc;">
+    <button id="saveServerBtn" style="padding:8px 12px; border:none; border-radius:6px; background:#3498db; color:#fff; cursor:pointer;">Save</button>
   </div>
 </div>
+
+
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
@@ -154,16 +143,6 @@ const firebaseConfig = {
   appId: "1:990542584710:web:2ecbedde401b70b5596a07",
   measurementId: "G-QR99V6BQLZ"
 };
-
-// ===== SESSION GUARD =====
-const teacherID = sessionStorage.getItem("teacherID");
-const teacherName = sessionStorage.getItem("teacherName");
-
-if (!teacherID || !teacherName) {
-  alert("Access denied. Please login first.");
-  window.location.href = "teacher-login.html";
-}
-
 
 const app = initializeApp(firebaseConfig);
 getAnalytics(app);
@@ -205,9 +184,11 @@ async function autoAssignStudents(users) {
     if (user.usertype === "student" && user.section) {
       if (grade11Sections.includes(user.section) && teacherLocker2) {
         await set(ref(db, `teachers/${teacherLocker2}/${id}`), { name: user.name });
+    
       }
       if (grade12Sections.includes(user.section) && teacherLocker1) {
         await set(ref(db, `teachers/${teacherLocker1}/${id}`), { name: user.name });
+    
       }
     }
   }
@@ -358,6 +339,8 @@ window.onclick=(e)=>{ if(e.target===studentModal) studentModal.style.display="no
 refreshBtn.onclick=loadUsers;
 loadUsers();
 
+
+
 // Server IP Modal
 const serverBtn = document.getElementById("serverBtn");
 const serverModal = document.getElementById("serverModal");
@@ -365,7 +348,7 @@ const serverClose = document.getElementById("serverClose");
 const serverInput = document.getElementById("serverInput");
 const saveServerBtn = document.getElementById("saveServerBtn");
 
-// Open server modal
+// Open modal
 serverBtn.onclick = async () => {
   try {
     const snap = await get(ref(db, "server/serverip"));
@@ -377,7 +360,7 @@ serverBtn.onclick = async () => {
   serverModal.style.display = "block";
 };
 
-// Close server modal
+// Close modal
 serverClose.onclick = () => serverModal.style.display = "none";
 window.onclick = (e) => { if(e.target === serverModal) serverModal.style.display = "none"; }
 
@@ -398,163 +381,12 @@ saveServerBtn.onclick = async () => {
     status.innerText = "❌ " + err.message;
     status.className = "error";
   }
-};<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<title>Locker System | Dashboard</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
-<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
-
-<style>
-* { box-sizing: border-box; font-family: 'Poppins', sans-serif; }
-body { margin: 0; background: #f5f6fa; padding: 20px; }
-.container { max-width: 1000px; margin: 0 auto; background: #fff; border-radius: 12px; padding: 30px; box-shadow: 0 15px 30px rgba(0,0,0,.1); }
-.header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }
-.header h1 { font-size: 28px; color: #2a5298; }
-.header button { margin-left: 10px; padding: 6px 12px; font-size: 14px; border-radius: 6px; border: none; cursor: pointer; background: #3498db; color: #fff; }
-.header button:hover { background: #2980b9; }
-
-#status { margin-bottom: 15px; font-size: 14px; }
-.success { color: #2ecc71; }
-.error { color: #e74c3c; }
-
-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-table th, table td { text-align: left; padding: 12px 15px; border-bottom: 1px solid #ddd; }
-table th { background: #2a5298; color: white; }
-table tr:hover { background: #f1f1f1; }
-table tr:nth-child(even) { background-color: #f9f9f9; }
-
-.footer { margin-top: 25px; text-align: center; font-size: 12px; color: #aaa; }
-
-.select-teacher { margin-top: 20px; display: flex; gap: 10px; align-items: center; }
-.select-teacher select, .select-teacher button { padding: 10px; font-size: 14px; border-radius: 8px; border: 1px solid #ccc; }
-
-h2 { margin-top: 40px; color: #2a5298; }
-
-/* Modal styles */
-.modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); }
-.modal-content { background-color: #fff; margin: 10% auto; padding: 20px; border-radius: 12px; width: 400px; }
-.close { float: right; font-size: 24px; cursor: pointer; }
-</style>
-</head>
-
-<body>
-
-<div class="container">
-  <div class="header">
-    <h1><i class="fa-solid fa-users"></i> Users Dashboard</h1>
-    <div>
-      <button id="serverBtn"><i class="fa-solid fa-server"></i> Server IP</button>
-      <button id="refreshBtn"><i class="fa-solid fa-arrows-rotate"></i> Refresh</button>
-    </div>
-  </div>
-
-  <div id="status"></div>
-
-  <table>
-    <thead>
-      <tr>
-        <th>Select</th>
-        <th>Full Name</th>
-        <th>Section</th>
-        <th>User Type</th>
-        <th>Locker #</th>
-        <th>Action</th>
-      </tr>
-    </thead>
-    <tbody id="usersTable">
-      <tr><td colspan="6" style="text-align:center;">Loading users...</td></tr>
-    </tbody>
-  </table>
-
-  <div class="footer">
-    © 2025 Automated Locker System
-  </div>
-</div>
-
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-import { getDatabase, ref, get, set } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
-
-/* =======================
-   🔐 SESSION GUARD (FINAL)
-   ======================= */
-   🔐 SESSION GUARD (FINAL)
-   ======================= */
-const teacherID   = sessionStorage.getItem("teacherID");
-const teacherName = sessionStorage.getItem("teacherName");
-const usertype    = sessionStorage.getItem("usertype");
-
-if (!teacherID || usertype !== "teacher") {
-  alert("Access denied. Teachers only.");
-  sessionStorage.clear();
-  window.location.href = "teacher-login.html";
-}
-
-/* =======================
-   FIREBASE INIT
-   ======================= */
-const firebaseConfig = {
-  apiKey: "AIzaSyDZp8uWoeq7v4XVmfUXsIXpj7dkm3H96iY",
-  authDomain: "lockersystem-5a386.firebaseapp.com",
-  databaseURL: "https://lockersystem-5a386-default-rtdb.firebaseio.com",
-  projectId: "lockersystem-5a386",
-  storageBucket: "lockersystem-5a386.appspot.com",
-  messagingSenderId: "990542584710",
-  appId: "1:990542584710:web:2ecbedde401b70b5596a07"
 };
 
-const app = initializeApp(firebaseConfig);
-const db = getDatabase(app);
 
-const status = document.getElementById("status");
-const usersTable = document.getElementById("usersTable");
-const refreshBtn = document.getElementById("refreshBtn");
 
-/* =======================
-   LOAD USERS
-   ======================= */
-async function loadUsers() {
-  usersTable.innerHTML = '<tr><td colspan="6" style="text-align:center;">Loading users...</td></tr>';
-  try {
-    const snap = await get(ref(db, "users"));
-    if (!snap.exists()) {
-      usersTable.innerHTML = '<tr><td colspan="6">No users found</td></tr>';
-      return;
-    }
 
-    usersTable.innerHTML = "";
-    const users = snap.val();
 
-    for (const id in users) {
-      const u = users[id];
-      const tr = document.createElement("tr");
-      tr.innerHTML = `
-        <td>${u.usertype === "student" ? `<input type="checkbox">` : ""}</td>
-        <td>${u.name}</td>
-        <td>${u.section || "-"}</td>
-        <td>${u.usertype}</td>
-        <td>${u.locker || "-"}</td>
-        <td>-</td>
-      `;
-      usersTable.appendChild(tr);
-    }
-
-  } catch (err) {
-    status.innerText = "❌ " + err.message;
-    status.className = "error";
-  }
-}
-
-refreshBtn.onclick = loadUsers;
-loadUsers();
-</script>
-
-</body>
-</html>
 
 </script>
 
