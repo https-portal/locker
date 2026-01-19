@@ -74,7 +74,9 @@ await emailjs.send("service_kcp7nkq", "template_ylcm01i", {
 
     // update last sent time ONLY for auto-send
     if (updateTime) {
-      const actTime = new Date(act.datetime).getTime();
+  
+      const actTime = new Date(act.timestamp).getTime();
+
       if (!lastSentTime || actTime > lastSentTime) {
         lastSentTime = actTime;
         localStorage.setItem("lastSentTime", lastSentTime);
@@ -146,3 +148,4 @@ setInterval(checkActivity, 10000);
 </script>
 </body>
 </html>
+
