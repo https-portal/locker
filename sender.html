@@ -99,9 +99,11 @@ async function checkActivity() {
     const container = document.getElementById("activities");
     container.innerHTML = "";
 
+    let newestTime = lastSentTime;
+
     for (let key in data) {
       const act = data[key];
-      const actTime = new Date(act.datetime).getTime();
+      const actTime = new Date(act.timestamp).getTime(); // ✅ FIXED
 
       const div = document.createElement("div");
       div.className = "activity";
@@ -117,24 +119,28 @@ async function checkActivity() {
       `;
       container.appendChild(div);
 
-      // manual send button
+      // manual send
       div.querySelector("button").addEventListener("click", () =>
         sendEmail(act, key, div, false)
       );
 
-      // ===== AUTO SEND (NEW ONLY) =====
-      if (!lastSentTime) {
-        // first load → mark latest only, DO NOT SEND
-        lastSentTime = actTime;
-        localStorage.setItem("lastSentTime", lastSentTime);
-        div.classList.add("sent");
-      } else if (actTime > lastSentTime) {
-        // NEW ACTIVITY → SEND
+      // ===== AUTO SEND =====
+      if (lastSentTime && actTime > lastSentTime) {
         sendEmail(act, key, div, true);
       } else {
-        // OLD ACTIVITY
         div.classList.add("sent");
       }
+
+      // track newest timestamp
+      if (!newestTime || actTime > newestTime) {
+        newestTime = actTime;
+      }
+    }
+
+    // save newest time after loop
+    if (!lastSentTime && newestTime) {
+      lastSentTime = newestTime;
+      localStorage.setItem("lastSentTime", lastSentTime);
     }
 
   } catch (err) {
@@ -142,10 +148,12 @@ async function checkActivity() {
   }
 }
 
+
 // check every 10 seconds
 checkActivity();
 setInterval(checkActivity, 10000);
 </script>
 </body>
 </html>
+
 
