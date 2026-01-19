@@ -39,8 +39,8 @@
 <div id="activities"></div>
 
 <script>
-const firebaseURL =
-  "https://lockersystem-5a386-default-rtdb.firebaseio.com/activity.json";
+const firebaseURL = "https://lockersystem-5a386-default-rtdb.firebaseio.com/activities.json";
+
 
 // store last sent activity time
 let lastSentTime = localStorage.getItem("lastSentTime")
@@ -49,7 +49,7 @@ let lastSentTime = localStorage.getItem("lastSentTime")
 
 // ================= SEND EMAIL FUNCTION =================
 async function sendEmail(act, key, div, updateTime = false) {
-  const recipient = (act.teacher_email || "").trim();
+  const recipient = (act.teacherEmail || "").trim();
 
   if (!recipient) {
     console.error("No email for", key);
@@ -58,15 +58,15 @@ async function sendEmail(act, key, div, updateTime = false) {
   }
 
   try {
-    await emailjs.send("service_kcp7nkq", "template_ylcm01i", {
-      email: recipient,
-      to_name: act.teacher || "",
-      student_name: act.name || "",
-      student_id: act.studentID || "",
-      section: act.section || "",
-      locker: act.locker || "",
-      datetime: act.datetime || ""
-    });
+await emailjs.send("service_kcp7nkq", "template_ylcm01i", {
+  email: recipient,
+  to_name: act.teacher || "",
+  student_name: act.studentName || "",  // was act.name
+  student_id: act.studentID || "",
+  section: act.section || "",
+  locker: act.locker || "",
+  datetime: act.timestamp || ""       // was act.datetime
+});
 
     console.log("Email sent:", key);
     div.classList.add("sent");
@@ -104,13 +104,13 @@ async function checkActivity() {
       const div = document.createElement("div");
       div.className = "activity";
       div.innerHTML = `
-        <strong>Student Name:</strong> ${act.name}<br>
+        <strong>Student Name:</strong> ${act.studentName}<br>
         <strong>Student ID:</strong> ${act.studentID}<br>
         <strong>Teacher:</strong> ${act.teacher}<br>
-        <strong>Teacher Email:</strong> ${act.teacher_email}<br>
+        <strong>Teacher Email:</strong> ${act.teacherEmail}<br>
         <strong>Section:</strong> ${act.section}<br>
         <strong>Locker:</strong> ${act.locker}<br>
-        <strong>Datetime:</strong> ${act.datetime}<br>
+        <strong>Datetime:</strong> ${act.timestamp}<br>
         <button>Send Email Now</button>
       `;
       container.appendChild(div);
