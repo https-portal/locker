@@ -2,7 +2,6 @@
 importScripts('https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js');
 importScripts('https://www.gstatic.com/firebasejs/9.23.0/firebase-messaging-compat.js');
 
-// Initialize Firebase inside Service Worker
 firebase.initializeApp({
   apiKey: "AIzaSyDptVEqHvZqOF1deQrOpnhQI_w6Vb5n4zQ",
   authDomain: "watersystem-e444e.firebaseapp.com",
@@ -16,9 +15,9 @@ firebase.initializeApp({
 
 const messaging = firebase.messaging();
 
-// Optional: handle background messages
-messaging.onBackgroundMessage(function(payload) {
-  console.log('[firebase-messaging-sw.js] Received background message ', payload);
+// Handle background messages (optional)
+messaging.onBackgroundMessage(payload => {
+  console.log('[firebase-messaging-sw.js] Received background message', payload);
   self.registration.showNotification(payload.notification.title, {
     body: payload.notification.body,
     icon: payload.notification.icon
