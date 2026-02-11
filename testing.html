@@ -27,36 +27,46 @@
     firebase.initializeApp(firebaseConfig);
     const messaging = firebase.messaging();
 
-    // ===== Register service worker =====
+    const notifyBtn = document.getElementById('notifyBtn');
+    let fcmToken = '';
+
+    // ===== Register service worker first =====
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('firebase-messaging-sw.js')
         .then(registration => {
-          messaging.useServiceWorker(registration);
           console.log('Service Worker registered for FCM');
-        }).catch(err => console.error('Service Worker registration failed:', err));
+
+          // Tell messaging to use this service worker
+          messaging.useServiceWorker(registration);
+
+          // ===== Now request notification permission and get token =====
+          return Notification.requestPermission();
+        })
+        .then(permission => {
+          if (permission !== 'granted') {
+            alert("Notifications blocked by user!");
+            return;
+          }
+
+          return messaging.getToken({
+            vapidKey: 'BI9HCoP2mTvQuI24ZMbEWNhPJk4xoFumvhT7qaecz1gfprTTyIjWgPZqO_Zw4jh06f1iDD3JqkHnD9uxkVxDEGE'
+          });
+        })
+        .then(token => {
+          if (!token) {
+            console.error("FCM token not generated!");
+            return;
+          }
+          console.log("FCM Token:", token);
+          fcmToken = token;
+          notifyBtn.disabled = false; // enable button
+        })
+        .catch(err => console.error("Error setting up FCM:", err));
     }
 
-    // ===== Ask permission and get token =====
-    let fcmToken = '';
-    const notifyBtn = document.getElementById('notifyBtn');
-
-    Notification.requestPermission().then(permission => {
-      if(permission === 'granted') {
-        messaging.getToken({ vapidKey: 'BI9HCoP2mTvQuI24ZMbEWNhPJk4xoFumvhT7qaecz1gfprTTyIjWgPZqO_Zw4jh06f1iDD3JqkHnD9uxkVxDEGE' })
-          .then(token => {
-            console.log("FCM Token:", token);
-            fcmToken = token;
-            notifyBtn.disabled = false; // enable button
-          })
-          .catch(err => console.error("Error getting token:", err));
-      } else {
-        alert("Notifications blocked by user!");
-      }
-    });
-
-    // ===== Click button to show notification =====
+    // ===== Button click event =====
     notifyBtn.addEventListener('click', () => {
-      if(!fcmToken) {
+      if (!fcmToken) {
         alert("FCM token not ready yet!");
         return;
       }
