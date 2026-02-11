@@ -1,0 +1,26 @@
+// firebase-messaging-sw.js
+importScripts('https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js');
+importScripts('https://www.gstatic.com/firebasejs/9.23.0/firebase-messaging-compat.js');
+
+// Initialize Firebase inside Service Worker
+firebase.initializeApp({
+  apiKey: "AIzaSyDptVEqHvZqOF1deQrOpnhQI_w6Vb5n4zQ",
+  authDomain: "watersystem-e444e.firebaseapp.com",
+  databaseURL: "https://watersystem-e444e-default-rtdb.firebaseio.com",
+  projectId: "watersystem-e444e",
+  storageBucket: "watersystem-e444e.firebasestorage.app",
+  messagingSenderId: "528910169669",
+  appId: "1:528910169669:web:05c99d2ca2e6d8c069952c",
+  measurementId: "G-H05MNY69J6"
+});
+
+const messaging = firebase.messaging();
+
+// Optional: handle background messages
+messaging.onBackgroundMessage(function(payload) {
+  console.log('[firebase-messaging-sw.js] Received background message ', payload);
+  self.registration.showNotification(payload.notification.title, {
+    body: payload.notification.body,
+    icon: payload.notification.icon
+  });
+});
