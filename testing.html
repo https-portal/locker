@@ -9,8 +9,9 @@
 </head>
 <body>
   <h2>Manual Web Push Notification</h2>
-  <button id="notifyBtn" disabled>Send Notification</button>
-  <p>FCM Token (copy if you want to send to other devices):</p>
+
+  <button id="notifyBtn" disabled>Send Test Notification</button>
+  <p>FCM Token (copy to use on other devices):</p>
   <textarea id="tokenArea" rows="4" cols="50" readonly></textarea>
 
   <script>
@@ -31,22 +32,23 @@
     const tokenArea = document.getElementById('tokenArea');
     let fcmToken = '';
 
-    // Register service worker first
+    // 1️⃣ Register service worker first
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('firebase-messaging-sw.js')
         .then(registration => {
-          messaging.useServiceWorker(registration);
           console.log('Service Worker registered');
+          messaging.useServiceWorker(registration);
 
-          // Request permission and get token
+          // 2️⃣ Request notification permission
           return Notification.requestPermission();
         })
         .then(permission => {
           if(permission !== 'granted') {
-            alert("Notifications blocked!");
+            alert("Notifications blocked by user!");
             return;
           }
 
+          // 3️⃣ Get FCM token
           return messaging.getToken({
             vapidKey: 'BI9HCoP2mTvQuI24ZMbEWNhPJk4xoFumvhT7qaecz1gfprTTyIjWgPZqO_Zw4jh06f1iDD3JqkHnD9uxkVxDEGE'
           });
@@ -56,23 +58,23 @@
             console.error("FCM token not generated!");
             return;
           }
-          console.log("FCM Token:", token);
           fcmToken = token;
-          tokenArea.value = fcmToken; // show token for copy
+          tokenArea.value = fcmToken;
           notifyBtn.disabled = false; // enable button
+          console.log("FCM Token:", token);
         })
         .catch(err => console.error("Error setting up FCM:", err));
     }
 
-    // Button click
+    // 4️⃣ Send test notification locally
     notifyBtn.addEventListener('click', () => {
       if(!fcmToken) {
         alert("FCM token not ready yet!");
         return;
       }
 
-      new Notification("Manual Alert", {
-        body: "This notification was sent manually!",
+      new Notification("Test Notification", {
+        body: "This notification is sent manually!",
         icon: "https://firebase.google.com/favicon.ico"
       });
     });
