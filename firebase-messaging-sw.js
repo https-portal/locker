@@ -1,4 +1,3 @@
-// firebase-messaging-sw.js
 importScripts('https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js');
 importScripts('https://www.gstatic.com/firebasejs/9.23.0/firebase-messaging-compat.js');
 
@@ -15,7 +14,6 @@ firebase.initializeApp({
 
 const messaging = firebase.messaging();
 
-// Handle background messages (optional)
 messaging.onBackgroundMessage(payload => {
   console.log('[firebase-messaging-sw.js] Received background message', payload);
   self.registration.showNotification(payload.notification.title, {
