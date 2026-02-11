@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Manual Push Notification</title>
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-messaging-compat.js"></script>
+</head>
+<body>
+  <h2>Manual Web Push Notification</h2>
+  <button id="notifyBtn">Send Notification</button>
+
+  <script>
+    // ===== Firebase config =====
+  const firebaseConfig = {
+  apiKey: "AIzaSyDptVEqHvZqOF1deQrOpnhQI_w6Vb5n4zQ",
+  authDomain: "watersystem-e444e.firebaseapp.com",
+  databaseURL: "https://watersystem-e444e-default-rtdb.firebaseio.com",
+  projectId: "watersystem-e444e",
+  storageBucket: "watersystem-e444e.firebasestorage.app",
+  messagingSenderId: "528910169669",
+  appId: "1:528910169669:web:05c99d2ca2e6d8c069952c",
+  measurementId: "G-H05MNY69J6"
+};
+
+    firebase.initializeApp(firebaseConfig);
+    const messaging = firebase.messaging();
+
+    // ===== Ask permission and get token =====
+    let fcmToken = '';
+    Notification.requestPermission().then(permission => {
+      if(permission === 'granted') {
+        messaging.getToken({ vapidKey: 'BI9HCoP2mTvQuI24ZMbEWNhPJk4xoFumvhT7qaecz1gfprTTyIjWgPZqO_Zw4jh06f1iDD3JqkHnD9uxkVxDEGE' })
+          .then(token => {
+            console.log("FCM Token:", token);
+            fcmToken = token;
+          }).catch(err => console.error("Error getting token:", err));
+      } else {
+        alert("Notifications blocked by user!");
+      }
+    });
+
+    // ===== Click button to show notification =====
+    document.getElementById('notifyBtn').addEventListener('click', () => {
+      if(!fcmToken) {
+        alert("FCM token not ready yet!");
+        return;
+      }
+
+      // Create a simple notification using the browser's Notification API
+      new Notification("Manual Alert", {
+        body: "This notification was sent manually!",
+        icon: "https://firebase.google.com/favicon.ico"
+      });
+    });
+  </script>
+</body>
+</html>
