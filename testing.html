@@ -4,13 +4,14 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Manual Push Notification</title>
-  <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-messaging-compat.js"></script>
 </head>
 <body>
   <h2>Manual Web Push Notification</h2>
   <button id="notifyBtn" disabled>Send Notification</button>
+  <p>FCM Token (copy if you want to send to other devices):</p>
+  <textarea id="tokenArea" rows="4" cols="50" readonly></textarea>
 
   <script>
     const firebaseConfig = {
@@ -26,25 +27,23 @@
 
     firebase.initializeApp(firebaseConfig);
     const messaging = firebase.messaging();
-
     const notifyBtn = document.getElementById('notifyBtn');
+    const tokenArea = document.getElementById('tokenArea');
     let fcmToken = '';
 
-    // ===== Register service worker first =====
+    // Register service worker first
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('firebase-messaging-sw.js')
         .then(registration => {
-          console.log('Service Worker registered for FCM');
-
-          // Tell messaging to use this service worker
           messaging.useServiceWorker(registration);
+          console.log('Service Worker registered');
 
-          // ===== Now request notification permission and get token =====
+          // Request permission and get token
           return Notification.requestPermission();
         })
         .then(permission => {
-          if (permission !== 'granted') {
-            alert("Notifications blocked by user!");
+          if(permission !== 'granted') {
+            alert("Notifications blocked!");
             return;
           }
 
@@ -53,20 +52,21 @@
           });
         })
         .then(token => {
-          if (!token) {
+          if(!token) {
             console.error("FCM token not generated!");
             return;
           }
           console.log("FCM Token:", token);
           fcmToken = token;
+          tokenArea.value = fcmToken; // show token for copy
           notifyBtn.disabled = false; // enable button
         })
         .catch(err => console.error("Error setting up FCM:", err));
     }
 
-    // ===== Button click event =====
+    // Button click
     notifyBtn.addEventListener('click', () => {
-      if (!fcmToken) {
+      if(!fcmToken) {
         alert("FCM token not ready yet!");
         return;
       }
