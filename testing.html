@@ -10,46 +10,57 @@
 </head>
 <body>
   <h2>Manual Web Push Notification</h2>
-  <button id="notifyBtn">Send Notification</button>
+  <button id="notifyBtn" disabled>Send Notification</button>
 
   <script>
-    // ===== Firebase config =====
-  const firebaseConfig = {
-  apiKey: "AIzaSyDptVEqHvZqOF1deQrOpnhQI_w6Vb5n4zQ",
-  authDomain: "watersystem-e444e.firebaseapp.com",
-  databaseURL: "https://watersystem-e444e-default-rtdb.firebaseio.com",
-  projectId: "watersystem-e444e",
-  storageBucket: "watersystem-e444e.firebasestorage.app",
-  messagingSenderId: "528910169669",
-  appId: "1:528910169669:web:05c99d2ca2e6d8c069952c",
-  measurementId: "G-H05MNY69J6"
-};
+    const firebaseConfig = {
+      apiKey: "AIzaSyDptVEqHvZqOF1deQrOpnhQI_w6Vb5n4zQ",
+      authDomain: "watersystem-e444e.firebaseapp.com",
+      databaseURL: "https://watersystem-e444e-default-rtdb.firebaseio.com",
+      projectId: "watersystem-e444e",
+      storageBucket: "watersystem-e444e.firebasestorage.app",
+      messagingSenderId: "528910169669",
+      appId: "1:528910169669:web:05c99d2ca2e6d8c069952c",
+      measurementId: "G-H05MNY69J6"
+    };
 
     firebase.initializeApp(firebaseConfig);
     const messaging = firebase.messaging();
 
+    // ===== Register service worker =====
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('firebase-messaging-sw.js')
+        .then(registration => {
+          messaging.useServiceWorker(registration);
+          console.log('Service Worker registered for FCM');
+        }).catch(err => console.error('Service Worker registration failed:', err));
+    }
+
     // ===== Ask permission and get token =====
     let fcmToken = '';
+    const notifyBtn = document.getElementById('notifyBtn');
+
     Notification.requestPermission().then(permission => {
       if(permission === 'granted') {
         messaging.getToken({ vapidKey: 'BI9HCoP2mTvQuI24ZMbEWNhPJk4xoFumvhT7qaecz1gfprTTyIjWgPZqO_Zw4jh06f1iDD3JqkHnD9uxkVxDEGE' })
           .then(token => {
             console.log("FCM Token:", token);
             fcmToken = token;
-          }).catch(err => console.error("Error getting token:", err));
+            notifyBtn.disabled = false; // enable button
+          })
+          .catch(err => console.error("Error getting token:", err));
       } else {
         alert("Notifications blocked by user!");
       }
     });
 
     // ===== Click button to show notification =====
-    document.getElementById('notifyBtn').addEventListener('click', () => {
+    notifyBtn.addEventListener('click', () => {
       if(!fcmToken) {
         alert("FCM token not ready yet!");
         return;
       }
 
-      // Create a simple notification using the browser's Notification API
       new Notification("Manual Alert", {
         body: "This notification was sent manually!",
         icon: "https://firebase.google.com/favicon.ico"
